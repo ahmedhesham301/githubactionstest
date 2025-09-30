@@ -16,3 +16,10 @@ jobs:
             
             - name: run another step in ubuntu vm
               run: echo "back to ubuntu"
+
+    dockerized_job:
+        runs-on: ubuntu-latest
+        container: node:20
+        steps:
+            - run: node --version
+            - run: echo "this whole job runs in a node container"
