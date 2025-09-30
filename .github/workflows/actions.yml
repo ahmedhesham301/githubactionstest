@@ -1,0 +1,18 @@
+on:
+    workflow_dispatch:
+
+jobs:
+    hybrid-job:
+        runs-on: ubuntu-latest
+        steps:
+            - name: run a command in ubuntu vm
+              run: echo "hello from ubuntu vm"
+
+            - name: run a command in a docker image
+              uses: docker://alpine:latest
+              with:
+                entrypoint: /bin/sh
+                args: -c echo "this runs in an alpine container"
+            
+            - name: run another step in ubuntu vm
+              run: echo "back to ubuntu"
