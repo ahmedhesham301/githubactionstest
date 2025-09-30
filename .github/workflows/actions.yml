@@ -12,7 +12,7 @@ jobs:
               uses: docker://alpine:latest
               with:
                 entrypoint: /bin/sh
-                args: -c echo "this runs in an alpine container"
+                args: -c "echo 'this runs in an alpine container'"
             
             - name: run another step in ubuntu vm
               run: echo "back to ubuntu"
