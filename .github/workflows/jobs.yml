@@ -23,4 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [job_2,job_3]
     steps:
-      - run: "echo ${{ github.job }}"
+      - run: |
+          echo ${{ github.job }}
+          npm install
+          npm run build
+        working-directory: ./temp
+        shell: bash
+        
