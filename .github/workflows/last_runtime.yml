@@ -1,0 +1,25 @@
+name: Get Last Run Time
+
+on:
+  workflow_dispatch:
+
+jobs:
+  get-last-run-time:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read  # allows listing workflow runs
+
+    steps:
+      - name: Get last workflow run
+        id: get_last_run
+        run: |
+          WORKFLOW_FILE="${GITHUB_WORKFLOW_REF##*/}"
+          response=$(gh api \
+            repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/runs \
+            -q '.workflow_runs[1].created_at')
+          echo "last_run_time=$response" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print last run time
+        run: echo "Last workflow run was at ${{ steps.get_last_run.outputs.last_run_time }}"
