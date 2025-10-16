@@ -1,4 +1,4 @@
-name: Get Last Run Time
+name: Get Last Run Time (via curl)
 
 on:
   workflow_dispatch:
@@ -7,19 +7,37 @@ jobs:
   get-last-run-time:
     runs-on: ubuntu-latest
     permissions:
-      actions: read  # allows listing workflow runs
+      actions: read   # needed to read workflow run history
 
     steps:
-      - name: Get last workflow run
-        id: get_last_run
+      - name: Get last workflow run via curl
+        id: last_run
         run: |
+          # Get the current workflow file name (e.g., ci.yml)
           WORKFLOW_FILE="${GITHUB_WORKFLOW_REF##*/}"
-          response=$(gh api \
-            repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/runs \
-            -q '.workflow_runs[1].created_at')
-          echo "last_run_time=$response" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Print last run time
-        run: echo "Last workflow run was at ${{ steps.get_last_run.outputs.last_run_time }}"
+          echo "Workflow file: $WORKFLOW_FILE"
+
+          # Fetch the last 2 runs (current + previous)
+          response=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/runs?per_page=2")
+
+          # Extract the *previous* run creation time using jq
+          last_run_time=$(echo "$response" | jq -r '.workflow_runs[1].created_at')
+
+          echo "last_run_time=$last_run_time" >> $GITHUB_OUTPUT
+          echo "Last run time (UTC): $last_run_time"
+
+      - name: Show difference from current run
+        run: |
+          current_time=$(date -u +%s)
+          last_run_time=$(date -u -d "${{ steps.last_run.outputs.last_run_time }}" +%s 2>/dev/null || echo 0)
+
+          if [ "$last_run_time" -eq 0 ]; then
+            echo "No previous run found."
+          else
+            diff_sec=$(( current_time - last_run_time ))
+            diff_hr=$(echo "$diff_sec/3600" | bc -l)
+            echo "It has been $diff_hr hours since the last run."
+          fi
